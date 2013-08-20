@@ -41,6 +41,7 @@
 #include "net/packetbuf.h"
 
 #define DEBUG 0
+#define NULLMAC_HDR_ADDRESSES 0
 
 #if DEBUG
 #include <stdio.h>
@@ -52,8 +53,10 @@
 #endif
 
 struct nullmac_hdr {
+#if NULLMAC_HDR_ADDRESSES
   rimeaddr_t receiver;
   rimeaddr_t sender;
+#endif
 };
 
 /*---------------------------------------------------------------------------*/
@@ -64,8 +67,10 @@ create(void)
 
   if(packetbuf_hdralloc(sizeof(struct nullmac_hdr))) {
     hdr = packetbuf_hdrptr();
+#if NULLMAC_HDR_ADDRESSES
     rimeaddr_copy(&(hdr->sender), &rimeaddr_node_addr);
     rimeaddr_copy(&(hdr->receiver), packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+#endif
     return sizeof(struct nullmac_hdr);
   }
   PRINTF("PNULLMAC-UT: too large header: %u\n", len);
@@ -78,12 +83,16 @@ parse(void)
   struct nullmac_hdr *hdr;
   hdr = packetbuf_dataptr();
   if(packetbuf_hdrreduce(sizeof(struct nullmac_hdr))) {
+#if NULLMAC_HDR_ADDRESSES
     packetbuf_set_addr(PACKETBUF_ADDR_SENDER, &(hdr->sender));
     packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &(hdr->receiver));
+#endif
 
     PRINTF("PNULLMAC-IN: ");
+#if NULLMAC_HDR_ADDRESSES
     PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_SENDER));
     PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+#endif
     PRINTF("%u (%u)\n", packetbuf_datalen(), len);
 
     return sizeof(struct nullmac_hdr);
