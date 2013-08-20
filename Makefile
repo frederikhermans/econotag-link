@@ -1,6 +1,17 @@
-TARGET=redbee-econotag
 CONTIKI = ../contiki
-CONTIKI_TARGET_SOURCEFILES += mc1322x-receiver.c tokenizer.c
+CONTIKI_TARGET_SOURCEFILES += tokenizer.c
+
+ifeq ($(TARGET),sky)
+	CONTIKI_TARGET_SOURCEFILES += sky.c
+endif
+
+ifeq ($(TARGET),redbee-econotag)
+	PROJECTDIRS += mc1322x
+	CONTIKI_TARGET_SOURCEFILES += receiver.c
+	CFLAGS += -Imc1322x
+endif
+
+all: link_logger
 
 node1.upload: link_logger
 	mc1322x-load.pl -e -f link_logger_redbee-econotag.bin -t /dev/ttyUSB2 -c 'bbmc -l redbee-econotag -i 0 reset'

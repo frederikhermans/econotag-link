@@ -38,7 +38,7 @@
 #include <string.h> // memcpy
 
 #include "link_logger.h"
-#include "mc1322x-receiver.h"
+#include "receiver.h"
 
 #ifndef DEBUG_MACA 
 #define DEBUG_MACA 0

@@ -2,7 +2,7 @@
 
 #include <mc1322x.h>
 
-#include "mc1322x-receiver.h"
+#include "receiver.h"
 #include "link_logger.h"
 
 PROCESS(receiver_process, "Receiver");
