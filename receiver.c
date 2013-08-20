@@ -68,6 +68,11 @@ broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
   printf("\n");
 }
 
+extern struct {
+	int has_data;
+	uint8_t buf[128];
+	uint8_t len;
+} corrupt;
 
 static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
 static struct broadcast_conn broadcast;
@@ -75,7 +80,6 @@ static struct broadcast_conn broadcast;
 PROCESS_THREAD(example_broadcast_process, ev, data)
 {
   static struct etimer et;
-  static int i;
 
   PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
 
@@ -88,6 +92,13 @@ PROCESS_THREAD(example_broadcast_process, ev, data)
     etimer_set(&et, CLOCK_SECOND/4);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+    if (corrupt.has_data) {
+      printf("Corrupt packet!\n");
+      for (i=0;i<128;i++) {
+	printf("%02x ", corrupt.buf[i]);
+      }
+      corrupt.has_data = 0;
+    }
   }
 
   PROCESS_END();
