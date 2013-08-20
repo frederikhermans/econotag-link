@@ -80,6 +80,7 @@ static struct broadcast_conn broadcast;
 PROCESS_THREAD(example_broadcast_process, ev, data)
 {
   static struct etimer et;
+  static int i;
 
   PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
 
