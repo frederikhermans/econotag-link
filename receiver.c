@@ -46,6 +46,8 @@
 
 #include "dev/leds.h"
 
+#include <mc1322x.h>
+
 #include <stdio.h>
 #include <string.h>
 /*---------------------------------------------------------------------------*/
@@ -65,21 +67,25 @@ broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
   }
   printf("\n");
 }
+
+
 static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
 static struct broadcast_conn broadcast;
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(example_broadcast_process, ev, data)
 {
   static struct etimer et;
+  static int i;
 
   PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
 
   PROCESS_BEGIN();
 
+  set_channel(5);
   broadcast_open(&broadcast, 129, &broadcast_call);
 
   while(1) {
-    etimer_set(&et, CLOCK_SECOND);
+    etimer_set(&et, CLOCK_SECOND/4);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
   }

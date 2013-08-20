@@ -46,6 +46,8 @@
 
 #include "dev/leds.h"
 
+#include <mc1322x.h>
+
 #include <stdio.h>
 #include <string.h>
 /*---------------------------------------------------------------------------*/
@@ -79,11 +81,13 @@ PROCESS_THREAD(example_broadcast_process, ev, data)
     payload[i] = i;
   }
 
+  set_channel(5);
+  set_power(0);
   broadcast_open(&broadcast, 129, &broadcast_call);
 
   seqno = 0;
   while(1) {
-    etimer_set(&et, CLOCK_SECOND / 2);
+    etimer_set(&et, CLOCK_SECOND / 4);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
 
