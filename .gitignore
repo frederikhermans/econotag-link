@@ -7,3 +7,4 @@ symbols.[ch]
 *.d
 *.map
 obj_redbee-econotag
+.*.swp
