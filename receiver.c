@@ -28,12 +28,12 @@
  *
  * This file is part of the Contiki operating system.
  *
- * $Id: example-broadcast.c,v 1.3 2010/11/06 15:03:48 adamdunkels Exp $
+ * $Id: example-abc.c,v 1.3 2010/11/06 15:03:48 adamdunkels Exp $
  */
 
 /**
  * \file
- *         Testing the broadcast layer in Rime
+ *         Testing the abc layer in Rime
  * \author
  *         Adam Dunkels <adam@sics.se>
  */
@@ -51,54 +51,53 @@
 #include <stdio.h>
 #include <string.h>
 /*---------------------------------------------------------------------------*/
-PROCESS(example_broadcast_process, "Broadcast example");
-AUTOSTART_PROCESSES(&example_broadcast_process);
+PROCESS(receiver_process, "Broadcast example");
+AUTOSTART_PROCESSES(&receiver_process);
 /*---------------------------------------------------------------------------*/
+
 static void
-broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
+abc_recv(struct abc_conn *c)
 {
-  int i;
-  uint16_t seqno;
-  memcpy(&seqno, packetbuf_dataptr(), sizeof(seqno));
-  printf("broadcast message received from %d.%d: %u\n",
-         from->u8[0], from->u8[1], seqno);
-  for (i=0;i<packetbuf_datalen();i++) {
-    printf("%x ", *((uint8_t *) packetbuf_dataptr()+i));
-  }
-  printf("\n");
 }
 
-extern struct {
-	int has_data;
-	uint8_t buf[128];
-	uint8_t len;
-} corrupt;
-
-static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
-static struct broadcast_conn broadcast;
+static const struct abc_callbacks abc_call = {abc_recv};
+static struct abc_conn abc;
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(example_broadcast_process, ev, data)
+PROCESS_THREAD(receiver_process, ev, data)
 {
   static struct etimer et;
   static int i;
+  static uint16_t seqno, last_seqno = 0;
 
-  PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
+  PROCESS_EXITHANDLER(abc_close(&abc);)
 
   PROCESS_BEGIN();
 
   set_channel(5);
-  broadcast_open(&broadcast, 129, &broadcast_call);
+  abc_open(&abc, 129, &abc_call);
 
   while(1) {
-    etimer_set(&et, CLOCK_SECOND/4);
+//    etimer_set(&et, CLOCK_SECOND/4);
 
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-    if (corrupt.has_data) {
-      printf("Corrupt packet!\n");
-      for (i=0;i<128;i++) {
-	printf("%02x ", corrupt.buf[i]);
+    PROCESS_WAIT_EVENT();
+    printf("ev=%d data=%p\n", ev, data);
+    if (ev == 210) {
+      packet_t *p = (packet_t *) data;
+      memcpy(&seqno, (uint8_t *) p->data+3, sizeof(uint16_t));
+      printf("seqno=%u\n", seqno);
+      if (seqno != last_seqno+1) {
+	if (seqno > last_seqno) {
+	  printf("missed %u packets\n", seqno-last_seqno-1);
+	} else {
+	  printf("last seqno was: %u\n", last_seqno);
+	}
       }
-      corrupt.has_data = 0;
+      last_seqno = seqno;
+      for (i=0;i<p->length-1;i++) {
+	printf("%x ", p->data[i]);
+      }
+      printf("\n");
+      free_packet((volatile packet_t *) data);
     }
   }
 

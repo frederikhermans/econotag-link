@@ -51,49 +51,54 @@
 #include <stdio.h>
 #include <string.h>
 /*---------------------------------------------------------------------------*/
-PROCESS(example_broadcast_process, "Broadcast example");
-AUTOSTART_PROCESSES(&example_broadcast_process);
+PROCESS(example_abc_process, "Broadcast example");
+PROCESS(receiver_process, "Receiver");
+AUTOSTART_PROCESSES(&example_abc_process);
 /*---------------------------------------------------------------------------*/
 static void
-broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
+abc_recv(struct abc_conn *c)
 {
-  printf("broadcast message received from %d.%d: '%s'\n",
-         from->u8[0], from->u8[1], (char *)packetbuf_dataptr());
 }
-static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
-static struct broadcast_conn broadcast;
+static const struct abc_callbacks abc_call = {abc_recv};
+static struct abc_conn broadcast;
 
 #define PAYLOAD_LEN 40
 static uint8_t payload[PAYLOAD_LEN];
 
+PROCESS_THREAD(receiver_process, ev, data) {
+  PROCESS_BEGIN();
+
+  PROCESS_END();
+}
+
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(example_broadcast_process, ev, data)
+PROCESS_THREAD(example_abc_process, ev, data)
 {
   static struct etimer et;
   static int i;
   static uint16_t seqno;
 
-  PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
+  PROCESS_EXITHANDLER(abc_close(&broadcast);)
 
   PROCESS_BEGIN();
 
   for (i=2;i<PAYLOAD_LEN;i++) {
-    payload[i] = i;
+    payload[i] = i-2;
   }
 
   set_channel(5);
   set_power(0);
-  broadcast_open(&broadcast, 129, &broadcast_call);
+  abc_open(&broadcast, 129, &abc_call);
 
   seqno = 0;
   while(1) {
-    etimer_set(&et, CLOCK_SECOND / 4);
+    etimer_set(&et, CLOCK_SECOND / 16);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
 
     memcpy(payload, &seqno, sizeof(uint16_t));
     packetbuf_copyfrom(payload, PAYLOAD_LEN);
-    broadcast_send(&broadcast);
+    abc_send(&broadcast);
     printf("broadcast message sent\n");
     seqno += 1;
   }

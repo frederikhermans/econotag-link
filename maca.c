@@ -37,6 +37,10 @@
 #include <stdio.h>
 #include <string.h> // memcpy
 
+#include "process.h"
+
+PROCESS_NAME(receiver_process);
+
 #ifndef DEBUG_MACA 
 #define DEBUG_MACA 0
 #endif
@@ -304,6 +308,8 @@ void free_packet(volatile packet_t *p) {
 	if(p == &dummy_ack) { return; }
 
 	BOUND_CHECK(free_head);
+
+	memset((uint8_t *) p->data, 0xff, sizeof(p->data));
 
 	p->length = 0; p->offset = 0;
 	p->left = free_head; p->right = 0;
@@ -635,12 +641,6 @@ void decode_status(void) {
 	}
 }
 
-struct {
-	int has_data;
-	uint8_t buf[128];
-	uint8_t len;
-} corrupt = { 0 };
-
 void maca_isr(void) {
 
 //	print_packets("maca_isr");
@@ -676,18 +676,22 @@ void maca_isr(void) {
 		dma_rx = 0;
 	}
 	if (filter_failed_irq()) {
-		PRINTF("maca filter failed\n\r");
+		volatile packet_t *p = get_free_packet();
+		if (p != NULL) {
+			memcpy((uint8_t *) p, (uint8_t *) dma_rx, sizeof(packet_t));
+			p->length = p->data[0];
+			process_post(&receiver_process, 210, (packet_t *) p);
+		} else {
+			printf("FAILED TO GET FREE PACKET.\n");
+		}
 		ResumeMACASync();
 		*MACA_CLRIRQ = (1 << maca_irq_flt);
 	}
 	if (checksum_failed_irq()) {
-		if (!corrupt.has_data) {
-			/* Cast necessary due to volatile declaration. */
-			memcpy(corrupt.buf, (uint8_t *) dma_rx->data, 128);
-			corrupt.len = corrupt.buf[0];
-			corrupt.has_data = 1;
-		}
-		printf("maca checksum failed\n\r");
+		/* This should never be reached, because our packets
+		 * contain invalid header and thus should always trigger
+		 * filter_failed_irq. */
+		printf("maca checksum failed\n");
 		ResumeMACASync();
 		*MACA_CLRIRQ = (1 << maca_irq_crc);
 	}
