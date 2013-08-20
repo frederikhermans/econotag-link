@@ -37,9 +37,8 @@
 #include <stdio.h>
 #include <string.h> // memcpy
 
-#include "process.h"
-
-PROCESS_NAME(receiver_process);
+#include "link_logger.h"
+#include "mc1322x-receiver.h"
 
 #ifndef DEBUG_MACA 
 #define DEBUG_MACA 0
@@ -680,7 +679,7 @@ void maca_isr(void) {
 		if (p != NULL) {
 			memcpy((uint8_t *) p, (uint8_t *) dma_rx, sizeof(packet_t));
 			p->length = p->data[0];
-			process_post(&receiver_process, 210, (packet_t *) p);
+			process_post(&receiver_process, EVENT_FILTER_FAILED, (packet_t *) p);
 		} else {
 			printf("FAILED TO GET FREE PACKET.\n");
 		}
