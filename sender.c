@@ -47,6 +47,7 @@
 #include "dev/leds.h"
 
 #include <stdio.h>
+#include <string.h>
 /*---------------------------------------------------------------------------*/
 PROCESS(example_broadcast_process, "Broadcast example");
 AUTOSTART_PROCESSES(&example_broadcast_process);
@@ -59,27 +60,38 @@ broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
 }
 static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
 static struct broadcast_conn broadcast;
+
+#define PAYLOAD_LEN 40
+static uint8_t payload[PAYLOAD_LEN];
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(example_broadcast_process, ev, data)
 {
   static struct etimer et;
+  static int i;
+  static uint16_t seqno;
 
   PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
 
   PROCESS_BEGIN();
 
+  for (i=2;i<PAYLOAD_LEN;i++) {
+    payload[i] = i;
+  }
+
   broadcast_open(&broadcast, 129, &broadcast_call);
 
+  seqno = 0;
   while(1) {
-
-    /* Delay 2-4 seconds */
-    etimer_set(&et, CLOCK_SECOND * 4 + random_rand() % (CLOCK_SECOND * 4));
+    etimer_set(&et, CLOCK_SECOND / 2);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
 
-    packetbuf_copyfrom("Hello", 6);
+    memcpy(payload, &seqno, sizeof(uint16_t));
+    packetbuf_copyfrom(payload, PAYLOAD_LEN);
     broadcast_send(&broadcast);
     printf("broadcast message sent\n");
+    seqno += 1;
   }
 
   PROCESS_END();

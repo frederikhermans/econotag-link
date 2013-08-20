@@ -47,6 +47,7 @@
 #include "dev/leds.h"
 
 #include <stdio.h>
+#include <string.h>
 /*---------------------------------------------------------------------------*/
 PROCESS(example_broadcast_process, "Broadcast example");
 AUTOSTART_PROCESSES(&example_broadcast_process);
@@ -54,8 +55,15 @@ AUTOSTART_PROCESSES(&example_broadcast_process);
 static void
 broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
 {
-  printf("broadcast message received from %d.%d: '%s'\n",
-         from->u8[0], from->u8[1], (char *)packetbuf_dataptr());
+  int i;
+  uint16_t seqno;
+  memcpy(&seqno, packetbuf_dataptr(), sizeof(seqno));
+  printf("broadcast message received from %d.%d: %u\n",
+         from->u8[0], from->u8[1], seqno);
+  for (i=0;i<packetbuf_datalen();i++) {
+    printf("%x ", *((uint8_t *) packetbuf_dataptr()+i));
+  }
+  printf("\n");
 }
 static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
 static struct broadcast_conn broadcast;
@@ -71,15 +79,9 @@ PROCESS_THREAD(example_broadcast_process, ev, data)
   broadcast_open(&broadcast, 129, &broadcast_call);
 
   while(1) {
-
-    /* Delay 2-4 seconds */
-    etimer_set(&et, CLOCK_SECOND * 4 + random_rand() % (CLOCK_SECOND * 4));
+    etimer_set(&et, CLOCK_SECOND);
 
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-
-    packetbuf_copyfrom("Hello", 6);
-    broadcast_send(&broadcast);
-    printf("broadcast message sent\n");
   }
 
   PROCESS_END();

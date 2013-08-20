@@ -1,0 +1,9 @@
+symbols.[ch]
+*.a
+*.o
+*.elf
+*.bin
+*.co
+*.d
+*.map
+obj_redbee-econotag
