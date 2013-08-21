@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "dev/serial-line.h"
 
 #include <mc1322x.h>
 
@@ -7,10 +8,23 @@
 
 PROCESS(receiver_process, "Receiver");
 
+void radio_set_channel(int channel) {
+    set_channel(channel-11);
+}
+
+void radio_set_txpower(int power) {
+    set_power(power);
+}
+
+void reset() {
+    printf("not implemented.\n");
+}
+
 PROCESS_THREAD(receiver_process, ev, data) {
     PROCESS_BEGIN();
 
-    set_channel(5);
+    uart1_set_input(serial_line_input_byte);
+    serial_line_init();
 
     printf("receiver process started.\n");
 
@@ -20,7 +34,7 @@ PROCESS_THREAD(receiver_process, ev, data) {
             volatile packet_t *pkt = (volatile packet_t *) data;
             int len = pkt->length-2;
 
-            dump_packet(pkt->data+1, len, CRC_UNKNOWN, RSSI_UNKNOWN, NOISE_UNKNOWN, LQI_UNKNOWN);
+            dump_packet((uint8_t *) pkt->data+1, len, CRC_UNKNOWN, RSSI_UNKNOWN, NOISE_UNKNOWN, LQI_UNKNOWN);
 #if 0
             for (i=0;i<p->length-1;i++) {
                 printf("%x ", p->data[i]);

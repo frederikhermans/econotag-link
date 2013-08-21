@@ -35,18 +35,16 @@ static void handle_serial_input(const char *line) {
     token = token_next(line, &pos);
 
     switch (token[0]) {
-//    case 't':
-//        config.txpower = atoi(token_next(line, &pos));
-//        printf("Setting TX power to %d.\n", config.txpower);
-//        /* XXX Don't use the packet buf attr for TX power if we
-//         * use cc2420_set_txpower(...) */
-//        cc2420_set_txpower(config.txpower);
-//        break;
-//    case 'c':
-//        config.channel = atoi(token_next(line, &pos));
-//        printf("Setting channel to %d\n", config.channel);
-//        cc2420_set_channel(config.channel);
-//        break;
+    case 't':
+        config.txpower = atoi(token_next(line, &pos));
+        printf("Setting TX power to %d.\n", config.txpower);
+        radio_set_txpower(config.txpower);
+        break;
+    case 'c':
+        config.channel = atoi(token_next(line, &pos));
+        printf("Setting channel to %d\n", config.channel);
+        radio_set_channel(config.channel);
+        break;
     case 's':
         config.to_send = atoi(token_next(line, &pos));
         printf("Sending %d packets.\n", config.to_send);
@@ -64,7 +62,7 @@ static void handle_serial_input(const char *line) {
 //        printf("Setting payload length to %d bytes.\n", config.payload_len + 2);
 //        break;
     case 'r':
-        WDTCTL = 0;
+        reset();
         break;
 //    case 'z':
 //        printf("txpower=%u, channel=%u, seqno=%u, to_send=%d, period=%d, "
@@ -120,14 +118,11 @@ PROCESS_THREAD(link_logger_process, ev, data) {
     static struct etimer et;
     PROCESS_BEGIN();
 
-    uart1_set_input(serial_line_input_byte);
-    //serial_line_init();
+    radio_set_channel(15);
+
     abc_open(&abc_con, 128, &abc_cb);
 
     printf("Hello, world!\n");
-
-    cc2420_set_channel(16);
-    cc2420_on();
 
     while (1) {
         PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message ||

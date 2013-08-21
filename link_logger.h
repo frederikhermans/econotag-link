@@ -10,4 +10,10 @@
 
 PROCESS_NAME(receiver_process);
 
+void radio_set_channel(int);
+void radio_set_txpower(int);
+void reset();
+void dump_packet(uint8_t *payload, int length, int crc_ok, int rssi,
+                 int noise, int lqi);
+
 #endif

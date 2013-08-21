@@ -6,6 +6,18 @@
 
 PROCESS(receiver_process, "Receiver");
 
+void radio_set_channel(int channel) {
+    cc2420_set_channel(channel);
+}
+
+void radio_set_txpower(int power) {
+    cc2420_set_txpower(power);
+}
+
+void reset() {
+    WDTCTL = 0;
+}
+
 static void incoming_packet(void) {
     int length = packetbuf_totlen();
     int noise = cc2420_rssi();
