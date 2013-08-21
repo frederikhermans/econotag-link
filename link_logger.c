@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "contiki.h"
 #include "dev/serial-line.h"
@@ -61,9 +63,9 @@ static void handle_serial_input(const char *line) {
 //        config.payload_len = atoi(token_next(line, &pos)) - 2;
 //        printf("Setting payload length to %d bytes.\n", config.payload_len + 2);
 //        break;
-//    case 'r':
-//        WDTCTL = 0;
-//        break;
+    case 'r':
+        WDTCTL = 0;
+        break;
 //    case 'z':
 //        printf("txpower=%u, channel=%u, seqno=%u, to_send=%d, period=%d, "
 //               "jitter=%u, payload_len=%d, rime_addr=%02x:%02x\n",
@@ -97,16 +99,16 @@ void send_packet() {
     }
 
     packetbuf_copyfrom(buf, config.payload_len);
-    printf("send: seqval=%u\n", seqval);
+    printf("send: seqval=%lu\n", seqval);
     abc_send(&abc_con);
 }
 
 
-void dump_packet(uint8_t *payload, uint8_t length, int crc_ok, int rssi,
+void dump_packet(uint8_t *payload, int length, int crc_ok, int rssi,
                  int noise, int lqi) {
     int i;
 
-    printf("recv: len=%hu, rssi=%d, lqi=%d, noise=%d, crc_ok=%d, payload=(",
+    printf("recv: len=%d, rssi=%d, lqi=%d, noise=%d, crc_ok=%d, payload=(",
             length, rssi, lqi, noise, crc_ok);
     for (i=0;i<length;i++) {
         printf("%x ", payload[i]);
@@ -114,16 +116,18 @@ void dump_packet(uint8_t *payload, uint8_t length, int crc_ok, int rssi,
     printf("), rssi_ovr=[]\n"); // TODO: RSSI sampling during packet reception.
 }
 
-
 PROCESS_THREAD(link_logger_process, ev, data) {
     static struct etimer et;
     PROCESS_BEGIN();
 
     uart1_set_input(serial_line_input_byte);
-    serial_line_init();
+    //serial_line_init();
     abc_open(&abc_con, 128, &abc_cb);
 
     printf("Hello, world!\n");
+
+    cc2420_set_channel(16);
+    cc2420_on();
 
     while (1) {
         PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message ||

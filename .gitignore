@@ -6,5 +6,7 @@ symbols.[ch]
 *.co
 *.d
 *.map
-obj_redbee-econotag
+obj_redbee-econotag/
 .*.swp
+*.sky
+tmpimage.ihex
