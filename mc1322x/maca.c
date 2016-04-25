@@ -669,28 +669,25 @@ void maca_isr(void) {
 			while(*MACA_CLK < wait_clk) { continue; }
 		}
 
+		volatile packet_t *p = get_free_packet();
+		if (p != NULL) {
+			memcpy((uint8_t *) p, (uint8_t *) dma_rx, sizeof(packet_t));
+			p->length = p->data[0];
+			process_post(&receiver_process, EVENT_DATA_INDICATION, (packet_t *) p);
+		} else {
+			printf("FAILED TO GET FREE PACKET.\n");
+		}
+
 		if(maca_rx_callback != 0) { maca_rx_callback(dma_rx); }
 
 		add_to_rx(dma_rx);
 		dma_rx = 0;
 	}
 	if (filter_failed_irq()) {
-		volatile packet_t *p = get_free_packet();
-		if (p != NULL) {
-			memcpy((uint8_t *) p, (uint8_t *) dma_rx, sizeof(packet_t));
-			p->length = p->data[0];
-			process_post(&receiver_process, EVENT_FILTER_FAILED, (packet_t *) p);
-		} else {
-			printf("FAILED TO GET FREE PACKET.\n");
-		}
 		ResumeMACASync();
 		*MACA_CLRIRQ = (1 << maca_irq_flt);
 	}
 	if (checksum_failed_irq()) {
-		/* This should never be reached, because our packets
-		 * contain invalid header and thus should always trigger
-		 * filter_failed_irq. */
-		printf("maca checksum failed\n");
 		ResumeMACASync();
 		*MACA_CLRIRQ = (1 << maca_irq_crc);
 	}

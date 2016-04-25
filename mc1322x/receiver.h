@@ -1,6 +1,6 @@
 #ifndef _MC1322X_RECEIVER_H
 #define _MC1322X_RECEIVER_H
 
-#define EVENT_FILTER_FAILED 1
+#define EVENT_DATA_INDICATION 1
 
 #endif
