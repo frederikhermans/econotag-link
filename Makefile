@@ -1,4 +1,4 @@
-CONTIKI = ../contiki
+CONTIKI = ../contiki-2.6
 CONTIKI_TARGET_SOURCEFILES += tokenizer.c
 
 ifeq ($(TARGET),sky)
